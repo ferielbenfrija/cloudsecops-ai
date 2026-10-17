@@ -1,0 +1,43 @@
+
+pipeline {
+    agent {
+        docker {
+            image 'python:3.12-slim'
+            args '-u root'
+        }
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Code source disponible'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('apps/demo-api') {
+                    sh 'python -m pip install -r requirements.txt'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir('apps/demo-api') {
+                    sh 'python -m pytest -v'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Tests réussis !'
+        }
+
+        failure {
+            echo 'Le pipeline a échoué.'
+        }
+    }
+}
