@@ -1,31 +1,38 @@
 
 pipeline {
-    agent {
-        label 'python-agent'
-    }
+    agent none
 
     stages {
-        stage('Checkout') {
+        stage('Tests Python') {
+            agent {
+                label 'python-agent'
+            }
+
             steps {
                 checkout scm
-            }
-        }
 
-        stage('Setup Python') {
-            steps {
                 dir('apps/demo-api') {
                     sh '''
                         python3 -m venv .venv-ci
                         .venv-ci/bin/python -m pip install -r requirements.txt
+                        .venv-ci/bin/python -m pytest -v
                     '''
                 }
             }
         }
 
-        stage('Run Tests') {
+        stage('Docker Build') {
+            agent {
+                label 'docker-agent'
+            }
+
             steps {
+                checkout scm
+
                 dir('apps/demo-api') {
-                    sh '.venv-ci/bin/python -m pytest -v'
+                    sh '''
+                        docker build -t cloudsecops-demo:v2 .
+                    '''
                 }
             }
         }
@@ -33,11 +40,11 @@ pipeline {
 
     post {
         success {
-            echo 'CloudSecOps AI - Tests passed!'
+            echo 'CloudSecOps AI - Pipeline SUCCESS'
         }
 
         failure {
-            echo 'CloudSecOps AI - Pipeline failed!'
+            echo 'CloudSecOps AI - Pipeline FAILED'
         }
     }
 }
