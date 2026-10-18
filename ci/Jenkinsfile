@@ -1,23 +1,23 @@
 
 pipeline {
     agent {
-        docker {
-            image 'python:3.12-slim'
-            args '-u root'
-        }
+        label 'python-agent'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo 'Code source disponible'
+                checkout scm
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Setup Python') {
             steps {
                 dir('apps/demo-api') {
-                    sh 'python -m pip install -r requirements.txt'
+                    sh '''
+                        python3 -m venv .venv-ci
+                        .venv-ci/bin/python -m pip install -r requirements.txt
+                    '''
                 }
             }
         }
@@ -25,7 +25,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('apps/demo-api') {
-                    sh 'python -m pytest -v'
+                    sh '.venv-ci/bin/python -m pytest -v'
                 }
             }
         }
@@ -33,11 +33,11 @@ pipeline {
 
     post {
         success {
-            echo 'Tests réussis !'
+            echo 'CloudSecOps AI - Tests passed!'
         }
 
         failure {
-            echo 'Le pipeline a échoué.'
+            echo 'CloudSecOps AI - Pipeline failed!'
         }
     }
 }
